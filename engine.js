@@ -6,6 +6,51 @@ const FOCUS={balanced:'全身均衡',shoulder:'肩背比例',chest:'胸部与手
 const DAYS=['周一','周二','周三','周四','周五','周六','周日'];
 const dateKey=(d=new Date())=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const num=(v)=>v!==''&&v!=null&&Number.isFinite(Number(v));
+const bmiOf=p=>Number(p.weight)/(Number(p.height)/100)**2;
+const details=p=>p.screening&&typeof p.screening==='object'&&!Array.isArray(p.screening)?p.screening:{};
+const isRelevant=(p,key)=>['yes','unsure'].includes(p.health?.[key]);
+function painToken(history=[]){
+ const entries=history.filter(h=>h&&h.pain);if(!entries.length)return null;
+ const last=entries[entries.length-1],raw=JSON.stringify([last.id,last.date,last.finishedAt,last.exercises,entries.length]);
+ let hash=2166136261;for(let i=0;i<raw.length;i++){hash^=raw.charCodeAt(i);hash=Math.imul(hash,16777619);}
+ return `cleared-${(hash>>>0).toString(36)}`;
+}
+function screeningQuestions(p,history=[]){
+ const s=details(p),bmi=bmiOf(p),questions=[];
+ const add=(key,title,help,options,group,dependsOn=[])=>questions.push({key,title,help,options,required:true,group,dependsOn});
+ if(isRelevant(p,'symptoms'))add('symptomStatus','这些症状现在是什么情况？','这里指胸痛、晕厥、轻微活动就异常气短等警示症状，不是正常训练后的短暂喘气。当前严重或持续症状应及时就医。',[
+ ['current','近期出现，或当前仍有尚未解释清楚的症状'],['cleared','过去出现过，已评估并明确允许恢复轻中强度运动'],['none','看清题意后确认没有这些症状'],['unsure','仍不能判断，需要进一步确认']],'symptoms',['health.symptoms']);
+ if(isRelevant(p,'condition')){
+  add('conditionType','慢性病或用药主要属于哪种情况？','选择最相关的一项；同时有多个所列疾病请选择“多种”。工具不诊断疾病，也不判断药物相互作用。',[
+  ['cardio','已知心脏、脑血管或其他心血管疾病'],['metabolic','糖尿病等已知代谢疾病'],['kidney','已知肾脏疾病'],['multiple','上面所列疾病同时有多种'],['other','其他已确诊的慢性情况（如高血压）'],['medicine','主要是用药，上述疾病均没有'],['none','核对后，没有相关疾病、用药或运动限制'],['unsure','不清楚属于哪种情况']],'condition',['health.condition']);
+  if(s.conditionType&&!['none','unsure'].includes(s.conditionType)){
+   add('conditionStable','近期情况是否稳定？','新发症状、急性发作、近期住院或尚未控制的病情，需要先确认。',[
+   ['stable','已确诊，近期稳定，无新症状或急性发作'],['changed','新近确诊、病情有变化或仍未控制'],['unsure','不能判断是否稳定']],'condition',['health.condition','screening.conditionType']);
+   add('medicineChange','近期用药有变化吗？','新增或调整药物后先确认运动影响，请勿自行停药或改药。',[
+   ['none','没有用药，或用药稳定且近期没有调整'],['cleared','调整过，医护人员已确认当前可按建议运动'],['changed','近期新增或调整，尚未确认运动影响'],['unsure','不确定']],'condition',['health.condition','screening.conditionType']);
+   add('medicalAdvice','你目前收到的运动建议是什么？','指医疗人员针对你本人现状给出的建议，不能用一般网络建议代替。',[
+   ['allowed','已明确允许轻中强度运动，无特殊动作限制'],['light','已明确允许轻量活动，没有其他动作限制'],['custom','需避开特定动作，或遵循专门康复处方'],['stop','被明确要求暂时停止或限制自主运动'],['none','没有收到明确建议'],['unsure','不确定医嘱具体含义']],'condition',['health.condition','screening.conditionType']);
+   if(['cardio','metabolic','kidney','multiple'].includes(s.conditionType))add('regularActivity','在目前稳定状态下，你原本规律运动吗？','指至少近 3 个月，每周至少 3 天、每次约 30 分钟中等强度运动。刚开始、刚恢复或偶尔走走都选“没有”。',[
+   ['yes','是，一直规律运动且近期正常耐受'],['no','没有，或最近中断了规律运动'],['unsure','不确定是否达到上述情况']],'condition',['health.condition','screening.conditionType']);
+  }
+ }
+ if(isRelevant(p,'pain'))add('painStatus','疼痛、受伤或术后恢复目前是什么情况？','持续或新发疼痛不能硬撑。只有已确认的简单功能限制，才能使用这里的适配动作。',[
+ ['resolved','已恢复，日常无痛，需评估时已获恢复建议'],['floorOnly','已评估并允许独立轻量运动，只需避免上下地'],['custom','需避开特定关节/动作，或执行康复处方'],['current','仍有疼痛、近期受伤/手术，尚未评估'],['unsure','还不清楚恢复情况或允许的活动范围']],'pain',['health.pain']);
+ if(isRelevant(p,'pregnancy'))add('pregnancyStatus','目前属于下面哪种情况？','孕期、产后恢复和哺乳期需要专门安排，不能直接套成人增肌减脂模板。',[
+ ['pregnant','正在孕期'],['postpartum','处于产后恢复阶段'],['feeding','处于哺乳期'],['none','不属于孕期、产后恢复或哺乳期'],['unsure','还不确定']],'pregnancy',['health.pregnancy']);
+ if(isRelevant(p,'eating'))add('eatingStatus','进食或近期体重变化具体是哪种情况？','缓慢且有原因的变化，与不明原因消瘦或进食障碍史需要分别处理。',[
+ ['expected','有原因的缓慢变化，正常进食，无进食障碍史'],['unexplained','近期意外变轻、下降明显，或原因不明'],['disorder','有进食障碍史，或当前明显限制/失控进食'],['none','核对后没有上述情况'],['unsure','仍不确定原因或进食状况']],'eating',['health.eating']);
+ if(Number(p.age)>=18&&bmi<18.5)add('weightTrend','体重偏轻是长期稳定的吗？','体重偏轻本身不代表不能练。先区分长期体型和近期异常消瘦，不要为了生成计划修改真实体重。',[
+ ['stable','长期较轻、近期稳定，进食和精神状态正常'],['loss','近期意外下降、吃不下，或明显乏力'],['unsure','不确定是否属于稳定偏瘦']],'body',['height','weight']);
+ if(Number(p.age)>=65||bmi>=30||s.painStatus==='floorOnly')add('mobility','日常活动和上下地的能力如何？','根据日常表现选择，不测试极限。需要协助、近期跌倒或明显站不稳，应先做功能评估。',[
+ ['normal','能独立行走、坐站，也能安全躺下再起身'],['upright','能独立行走和坐站，但不方便或不应上下地'],['assisted','需要协助，近期跌倒，或站立行走明显不稳'],['unsure','还不能判断']],'mobility',['age','height','weight','screening.painStatus']);
+ if((isRelevant(p,'condition')&&s.conditionType!=='none')||(isRelevant(p,'eating')&&!['none','expected'].includes(s.eatingStatus))||bmi<18.5)add('nutritionRestriction','饮食方面有单独的医疗要求吗？','运动许可不等于饮食许可。本题仅影响饮食，不锁住适用训练；肾病和进食障碍仍需专门营养安排。',[
+ ['none','无特殊饮食医嘱，日常进食正常'],['special','有蛋白质、能量、液体或其他特殊饮食要求'],['unsure','不确定是否需要特殊饮食安排']],'nutrition',['health.condition','screening.conditionType','health.eating','screening.eatingStatus']);
+ const token=painToken(history);
+ if(token)add('painResolution','最近训练记录中的疼痛已经处理了吗？','先停止相关动作。刷新页面或换训练日不会视为已恢复，新的疼痛记录需要重新确认。',[
+ ['pending','还没有，或仍有疼痛'],[token,'已无痛恢复，需评估的情况也已获恢复建议'],['unsure','还不能判断']],'painHistory',[]);
+ return questions;
+}
 function validateProfile(p){
  const errors=[];
  for(const [key,min,max,label] of [['age',10,100,'年龄'],['height',100,230,'身高'],['weight',25,250,'体重'],['sleep',0,16,'睡眠时长']])if(!num(p[key])||Number(p[key])<min||Number(p[key])>max)errors.push(`${label}请填 ${min}–${max} 范围内的数字。`);
@@ -22,19 +67,73 @@ function validateProfile(p){
  if(!p.health||['symptoms','condition','pain','pregnancy','eating'].some(k=>!['no','yes','unsure'].includes(p.health[k])))errors.push('请回答全部健康问题；不确定可以选择“不确定”。');
  if(!['home','canteen','takeout'].includes(p.foodMode)||!['mixed','vegetarian','vegan'].includes(p.diet)||!['low','medium','flexible'].includes(p.budget)||!['low','medium','high'].includes(p.activity))errors.push('请完成饮食、预算和日常活动选择。');
  if((p.allergies||'').length>500||(p.notes||'').length>1000)errors.push('备注太长，请缩短后保存。');
+ if(p.screening!==undefined&&(!p.screening||typeof p.screening!=='object'||Array.isArray(p.screening)||Object.entries(p.screening).some(([k,v])=>k.length>80||typeof v!=='string'||v.length>300)))errors.push('补充健康资料格式无效。');
  return errors;
 }
-function assess(p){
- const reasons=[],issues=[];const bmi=Number(p.weight)/(Number(p.height)/100)**2;
- const add=(code,title,answer,message,step)=>{reasons.push(message);issues.push({code,title,answer,message,step});};
- if(Number(p.age)<18)add('age','年龄适用范围',`你填写的是 ${p.age} 岁。`,'本版不自动安排未成年人的成人增肌减脂计划，请与监护人及专业人员一起安排。',0);
- if(Number(p.age)>=65)add('age','年龄适用范围',`你填写的是 ${p.age} 岁。`,'本版成人入门计划暂不覆盖 65 岁及以上的个体需求；合适的计划还需考虑平衡与日常功能。',0);
- const labels={symptoms:'胸痛、晕厥或异常气短',condition:'慢性病、用药或医生的运动限制',pain:'持续疼痛、受伤或手术恢复',pregnancy:'孕期、产后恢复或哺乳期',eating:'进食障碍史或近期不明原因的体重变化'};
- for(const key of Object.keys(labels))if(p.health[key]!=='no')add(key,labels[key],`你选择了“${p.health[key]==='unsure'?'不确定':'有'}”。`,p.health[key]==='unsure'?`${labels[key]}：回答“不确定”不代表已确认有这个问题。先核对题意；仍无法判断时，请向了解你情况的医生或相关专业人员确认。`:`${labels[key]}：请让了解你情况的医生或相关专业人员协助决定适合的训练和饮食。`,3);
- const bodyAnswer=`你填写的是 ${p.height} 厘米、${p.weight} 公斤，计算的 BMI（体重指数）为 ${bmi.toFixed(1)}。`;
- if(bmi<18.5)add('body','身高与体重范围',bodyAnswer,'体重指数低于本版自动计划覆盖范围（18.5）。先核对身高和体重单位；数据准确时，需结合营养与健康情况另行安排。',0);
- if(bmi>=35)add('body','身高与体重范围',bodyAnswer,'体重指数达到本版自动计划的上限（35）。先核对身高和体重单位；数据准确时，需结合关节负担、体能与健康情况另行安排。',0);
- return{eligible:reasons.length===0,reasons,issues,bmi:Math.round(bmi*10)/10,urgent:p.health.symptoms==='yes'};
+function assess(p,history=[]){
+ const reasons=[],issues=[],adaptations=[],s=details(p),bmi=bmiOf(p);let mode='standard',urgent=false;
+ const rank={standard:0,adapted:1,clarify:2,review:3,pause:4};
+ const add=(code,title,message,next='review',step=3)=>{reasons.push(message);issues.push({code,title,answer:'',message,step});if(rank[next]>rank[mode])mode=next;};
+ const adapt=text=>{adaptations.push(text);if(mode==='standard')mode='adapted';};
+ const qs=screeningQuestions(p,history);
+ const missing=qs.filter(q=>q.group!=='nutrition'&&!q.options.some(o=>o[0]===s[q.key]));
+ for(const q of missing)add(q.key,q.title,`请在工具内补充“${q.title}”，再按实际情况匹配方案。`,'clarify');
+ if(Number(p.age)<18)add('age','需要青少年专门安排','未满 18 岁需要符合生长发育的活动和饮食，成人增肌减脂模板不适用。','review',0);
+ if(isRelevant(p,'symptoms')){
+  if(s.symptomStatus==='current'){add('symptoms','先处理警示症状','当前或近期有未解释清楚的胸痛、晕厥或异常气短，请暂停训练并尽快就医；严重、持续或突然加重时及时寻求急救。','pause');urgent=true;}
+  if(s.symptomStatus==='unsure')add('symptoms','先确认症状含义','还不能确定是否存在警示症状，请由了解情况的医疗人员确认，之后回来继续。','clarify');
+  if(s.symptomStatus==='cleared')adapt('过去症状已评估并获准恢复，先以轻量、能正常说话的强度开始。');
+ }
+ if(isRelevant(p,'condition')){
+  if(s.conditionType==='unsure')add('condition','先弄清疾病或用药类别','请确认具体疾病或用药的运动注意事项，不能仅凭“慢性病/用药”决定强度。','clarify');
+  if(s.conditionType&&!['none','unsure'].includes(s.conditionType)){
+   if(s.conditionStable==='changed')add('condition','近期情况需要评估','近期情况有变化或尚未控制，先确认允许的活动范围，再启动自主训练。');
+   if(s.conditionStable==='unsure')add('condition','先确认近期稳定性','尚不清楚情况是否稳定，需要补充医疗人员对近期状态的判断。','clarify');
+   if(s.medicineChange==='changed')add('medicine','先确认药物调整的影响','近期药物调整后还未确认运动影响，先询问开药或随访的医护人员。');
+   if(s.medicineChange==='unsure')add('medicine','先核对用药变化','请确认近期是否新增或调整过药物，以及对运动的影响。','clarify');
+   if(s.medicalAdvice==='stop')add('condition','遵循暂停运动的医嘱','当前有明确自主运动限制，工具不能覆盖医嘱，请按医嘱复评。','pause');
+   if(s.medicalAdvice==='custom')add('condition','需要个体处方','建议含特定动作或康复限制，本工具还不能把这些限制安全转换为完整处方。请使用已有专业方案，记录仍可使用。');
+   if(s.medicalAdvice==='unsure')add('condition','先确认医嘱','还不清楚允许的活动范围，请先确认医嘱具体内容。','clarify');
+   const disease=['cardio','metabolic','kidney','multiple'].includes(s.conditionType);
+   if(disease&&s.regularActivity==='unsure')add('condition','先确认既往运动习惯','是否一直规律运动会影响判断；不确定时先与医疗人员确认。','clarify');
+   if(disease&&s.regularActivity==='no'&&s.medicalAdvice==='none')add('condition','开始前需要运动许可','已有心血管、代谢或肾脏相关疾病，且原本没有规律运动：先取得针对现状的运动建议，再开始计划。');
+   if(s.conditionStable==='stable')adapt('按已确认的稳定状态从轻量开始，不安排高强度、憋气或力竭训练。');
+   if(s.medicalAdvice==='light')adapt('当前只获准轻量活动，优先徒手、扶稳动作，保留较长休息。');
+  }
+ }
+ if(isRelevant(p,'pain')){
+  if(s.painStatus==='current')add('pain','先明确疼痛或恢复状态','仍有持续/新发疼痛，或伤后术后尚未评估；先停止诱发疼痛的动作，并确认允许的活动范围。');
+  if(s.painStatus==='custom')add('pain','使用已有康复方案','需要针对特定关节或动作的限制，本工具不能代替个体康复处方。');
+  if(s.painStatus==='unsure')add('pain','先确认恢复范围','尚不清楚恢复状态或允许的活动，需要先补充专业意见。','clarify');
+  if(s.painStatus==='resolved')adapt('伤痛已恢复，重新开始时减少训练量；出现新疼痛就停止相关动作。');
+  if(s.painStatus==='floorOnly')adapt('仅使用站姿、坐站或扶稳版本，避开需要上下地的动作。');
+ }
+ if(isRelevant(p,'pregnancy')){
+  if(['pregnant','postpartum','feeding'].includes(s.pregnancyStatus))add('pregnancy','需要孕产期专门安排','孕期、产后恢复或哺乳期应使用对应阶段的运动和营养安排；成人增肌减脂模板暂不覆盖。');
+  if(s.pregnancyStatus==='unsure')add('pregnancy','先确认所处阶段','先确认是否属于孕期、产后恢复或哺乳期，再选择相应方案。','clarify');
+ }
+ if(isRelevant(p,'eating')){
+  if(s.eatingStatus==='unexplained')add('eating','先了解意外消瘦原因','近期体重意外下降或原因不明，先评估原因，不自动安排增减重或加量训练。');
+  if(s.eatingStatus==='disorder')add('eating','需要进食与运动的个体支持','有进食障碍史或当前进食问题，需要专业人员共同安排饮食与运动，不自动开热量和训练处方。');
+  if(s.eatingStatus==='unsure')add('eating','先确认变化原因','还不能解释体重或进食变化，请先确认原因。','clarify');
+ }
+ if(Number(p.age)>=18&&bmi<16)add('body','先做营养与健康评估',`当前 BMI 约 ${bmi.toFixed(1)}，需要进一步评估营养风险。数字不用于诊断；先核对单位，再由专业人员安排恢复进食与活动。`,'review',0);
+ else if(Number(p.age)>=18&&bmi<18.5){
+  if(s.weightTrend==='stable')adapt('长期稳定偏轻：保留轻量力量训练，不安排减脂缺口。');
+  if(s.weightTrend==='loss')add('body','先了解消瘦或乏力','近期意外消瘦、吃不下或明显乏力，先了解原因，再安排加量训练。','review',0);
+  if(s.weightTrend==='unsure')add('body','先确认体重趋势','根据记录或专业评估确认是否长期稳定偏瘦，不凭一次体重判断。','clarify',0);
+ }
+ if(Number(p.age)>=65)adapt('按日常功能选择低冲击力量动作，并加入扶稳平衡练习；年龄本身不构成拒绝原因。');
+ if(bmi>=30)adapt('根据实际活动能力降低起始负担，避免跳跃；体重较高本身不会锁住训练。');
+ if(qs.some(q=>q.key==='mobility')){
+  if(s.mobility==='upright')adapt('不便上下地，全部使用站姿、坐站或扶稳动作。');
+  if(s.mobility==='assisted')add('mobility','先做功能与跌倒风险评估','需要协助、近期跌倒或明显站不稳，应先评估和指导活动，不自动安排独立站立训练。');
+  if(s.mobility==='unsure')add('mobility','先确认活动能力','根据日常表现确认活动能力，不为回答本题测试极限。','clarify');
+ }
+ const token=painToken(history);
+ if(token&&s.painResolution!==token&&s.painResolution!==undefined)add('painHistory','最近训练疼痛尚未处理','最近一次训练记录过疼痛，先停止相关动作并确认恢复，新的日期不会自动解除。',s.painResolution==='unsure'?'clarify':'review');
+ if(token&&s.painResolution===token)adapt('最近训练疼痛已确认处理，重新从较低起点开始，新的疼痛需要再次暂停确认。');
+ return{eligible:['standard','adapted'].includes(mode),mode,reasons,issues,bmi:Math.round(bmi*10)/10,urgent,adaptations,questions:qs.filter(q=>q.group!=='nutrition'&&(!q.options.some(o=>o[0]===s[q.key])||s[q.key]==='unsure')).map(q=>q.key)};
 }
 function schedule(days){
  const all=[...new Set(days)].sort((a,b)=>a-b);let best=[];
@@ -45,55 +144,128 @@ function schedule(days){
  }
  return best;
 }
-function pick(p,ids){return ids.find(id=>E[id].equipment.every(x=>p.equipment.includes(x)));}
-function makePlan(p,history=[]){
+function noFloor(p){return details(p).mobility==='upright'||(isRelevant(p,'pain')&&details(p).painStatus==='floorOnly');}
+function available(p,id){return!!E[id]&&E[id].equipment.every(x=>(p.equipment||[]).includes(x))&&!(noFloor(p)&&E[id].floor);}
+function pick(p,ids){return ids.find(id=>available(p,id));}
+function alternatives(p,exId,history=[]){
+ const safety=assess(p,history);if(!safety.eligible||!E[exId])return[];
+ const gentle=['squat','chair','wall','hinge','bridge','wraise','standingw','calf','supportedbalance','supportedmarch','standinghip','bandpull'];
+ return Object.keys(E).filter(id=>id!==exId&&E[id].pattern===E[exId].pattern&&available(p,id)&&(safety.mode!=='adapted'||gentle.includes(id)));
+}
+function parseLocalDate(value){
+ if(value instanceof Date&&!Number.isNaN(value.getTime()))return new Date(value.getFullYear(),value.getMonth(),value.getDate());
+ if(typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)){const [y,m,d]=value.split('-').map(Number),parsed=new Date(y,m-1,d);if(dateKey(parsed)===value)return parsed;}
+ const today=new Date();return new Date(today.getFullYear(),today.getMonth(),today.getDate());
+}
+const shiftDate=(date,n)=>{const result=new Date(date);result.setDate(result.getDate()+n);return result;};
+function framework(p,history,now){
+ const start=parseLocalDate(p.planStartedAt||p.updatedAt||dateKey(now));const elapsed=Math.max(0,Math.round((now-start)/86400000)),week=Math.min(4,Math.floor(elapsed/7)+1);
+ const weeks=[{week:1,title:'认识动作，找到起点',detail:'先学动作、找到能控制的难度。没有完成记录就保持起步量，不因为日期变化加量。'},
+ {week:2,title:'稳定完成，形成节奏',detail:'优先稳定完成与恢复。连续完成、恢复良好才考虑增加一组，吃力或恢复差就减少。'},
+ {week:3,title:'根据反馈，小步调整',detail:'两次都轻松且动作稳定，再少量增加次数。一次只改变一个条件，不要求加重。'},
+ {week:4,title:'回看四周，决定下一步',detail:'结合完成率、主观难度和恢复重新安排。错过不补做双倍，之后继续使用反馈规则。'}];
+ return{phase:{...weeks[week-1],detail:weeks[week-1].detail+` 已记录 ${history.length} 次训练。`},weeks};
+}
+function makePlan(p,history=[],options={}){
  const errors=validateProfile(p);if(errors.length)return{valid:false,errors};
- const safety=assess(p);if(!safety.eligible)return{valid:true,safety,workouts:[],trainingDays:[],notes:[]};
- const trainingDays=schedule(p.days);const novice=p.experience==='new';
- const squat=pick(p,novice?['legpress','goblet','chair','squat']:['legpress','goblet','squat']);
- const push=pick(p,['chestmachine','floor',...(novice?['wall']:['pushup','wall'])]);
- const pull=pick(p,['lat','row','bandrow','wraise']);
- const hinge=novice?'bridge':pick(p,['rdl','bridge']);
- const mainA=[squat,push,pull,hinge];const mainB=[pull,novice?'bridge':pick(p,['rdl','hinge']),push,squat];
- const count=Number(p.minutes)>=45?6:Number(p.minutes)>=30?5:4;
- const extras={balanced:['deadbug','calf'],shoulder:[pick(p,['lateral','bandpull','wraise']),'deadbug'],chest:[pick(p,['curl','deadbug']),'plank'],glute:['bridge','deadbug'],core:['deadbug','plank']}[p.focus];
- const complete=history.filter(h=>!h.pain&&h.completedSets>=h.totalSets*.8).length;
- const sets=complete<2?1:2;
- const patterns=[mainA,mainB,mainA];
+ const now=parseLocalDate(options.now),frames=framework(p,history,now),safety=assess(p,history);
+ if(!safety.eligible)return{valid:true,safety,workouts:[],trainingDays:[],notes:[],...frames,next7:[],adjustment:{title:'先完成当前确认',detail:'资料和记录会保留，需要确认的内容只在应用内补充。'},rationale:safety.reasons,adapted:false};
+ const adapted=safety.mode==='adapted',novice=p.experience==='new',upright=noFloor(p),older=Number(p.age)>=65;
+ const goalKey=bmiOf(p)<18.5?'build':bmiOf(p)<20&&p.goal==='lose'?'recomp':p.goal;
+ const maxMinutes=Number(p.minutes),minutes=[20,30,45,60].includes(Number(options.minutes))?Math.min(maxMinutes,Number(options.minutes)):maxMinutes;
+ let lastPainIndex=-1;for(let i=0;i<history.length;i++)if(history[i]?.pain)lastPainIndex=i;
+ const trainingDays=schedule(p.days),usable=history.slice(lastPainIndex+1).filter(h=>h&&!h.pain&&num(h.completedSets)&&num(h.totalSets)&&Number(h.totalSets)>0);
+ const latest=usable[usable.length-1],recent=usable.slice(-2),adequate=h=>Number(h.completedSets)>=Number(h.totalSets)*.8,recovered=h=>!['poor','tired'].includes(h.recovery);
+ const good=usable.filter(h=>adequate(h)&&recovered(h)&&h.effort!=='hard');
+ const twoGood=recent.length===2&&recent.every(h=>adequate(h)&&recovered(h)&&h.effort!=='hard');
+ const twoEasy=recent.length===2&&recent.every(h=>adequate(h)&&recovered(h)&&h.effort==='easy');
+ const reduce=!!latest&&(latest.effort==='hard'||!adequate(latest)||!recovered(latest)),poorSleep=Number(p.sleep)<6;
+ let baseSets=(p.experience==='regular'&&!adapted)?2:twoGood?2:1;
+ if(goalKey==='build'&&good.length>=6&&twoEasy&&!adapted&&minutes>=45)baseSets=3;
+ if(reduce||poorSleep)baseSets=Math.max(1,baseSets-1);
+ if(adapted)baseSets=Math.min(2,baseSets);
+ const squat=pick(p,adapted?['chair','squat']:novice?['legpress','goblet','chair','squat']:['legpress','goblet','squat']);
+ const push=pick(p,adapted?['wall']:['chestmachine','floor',...(novice?['wall']:['pushup','wall'])]);
+ const pull=pick(p,adapted?['standingw']:['lat','row',...(upright?[]:['bandrow']),'wraise','standingw']);
+ const hinge=pick(p,adapted?(upright?['standinghip','hinge']:['hinge','bridge']):novice?['bridge','hinge']:['rdl','hinge','bridge']);
+ let main=[squat,push,pull,hinge];
+ if(p.focus==='shoulder')main=[pull,push,squat,hinge];if(p.focus==='chest')main=[push,pull,squat,hinge];if(p.focus==='glute')main=[squat,hinge,pull,push];
+ let count=minutes>=60?7:minutes>=45?6:minutes>=30?5:4;
+ if(goalKey==='health'&&minutes>=45)count=5;if(goalKey==='build'&&minutes>=45&&!adapted)count=Math.min(7,count+1);if(older)count=Math.max(5,count);
+ const extras={balanced:['deadbug','calf','supportedmarch'],shoulder:[pick(p,adapted?['standingw','bandpull']:['lateral','bandpull','wraise']),'deadbug','calf'],chest:[pick(p,adapted?['calf']:['curl','deadbug']),'plank','calf'],glute:['bridge','standinghip','deadbug'],core:['deadbug','plank','supportedmarch']}[p.focus];
+ const patternSets=[main,[main[2],main[3],main[0],main[1]],main],notes=[...safety.adaptations];
+ const adjustment=reduce?{title:'下一次主动减量',detail:'最近吃力、恢复不佳或完成不足：减少组数/次数，延长休息。恢复前不加量。'}:poorSleep?{title:'先照顾恢复',detail:'填写的睡眠较少，先减少组数与次数、延长休息，恢复后再根据实际反馈调整。'}:twoEasy?{title:'根据连续反馈小步增加',detail:'最近两次完成良好且轻松：优先增加一组，组数已稳定时才少量增加次数，不自动提高重量。'}:{title:'保持可完成的起点',detail:'先把动作做稳定，完成后记录难度与恢复。进入下一周不会自动增加组数或重量。'};
  const workouts=trainingDays.map((day,i)=>{
-  let ids=[...patterns[i]];
-  for(const id of [...extras,'deadbug','calf','hinge'])if(!ids.includes(id)&&ids.length<count)ids.push(id);
-  return{id:`workout-${i}`,label:`全身 ${String.fromCharCode(65+i)}`,day,sets,minutes:Math.min(Number(p.minutes),8+ids.length*sets*3),exercises:ids.map(id=>({id,sets,reps:E[id].reps,rest:E[id].rest}))};
+  const ids=[...new Set(patternSets[i].filter(Boolean))];if(older&&available(p,'supportedbalance'))ids.push('supportedbalance');
+  for(const id of [...extras,'calf','supportedmarch','standinghip','deadbug','hinge'])if(id&&available(p,id)&&!(adapted&&id==='plank')&&!ids.includes(id)&&ids.length<count)ids.push(id);
+  const exercises=ids.map(id=>{
+   const ex=E[id],balance=ex.pattern==='balance',cardio=ex.pattern==='cardio',max=ex.maxReps||12;
+   const baseline=ex.timed?(balance?5:15):Math.min(max,adapted?5:(max>=12?8:6));
+   const priorDone=(latest?.exercises?.find(x=>x.id===id)?.sets||[]).filter(x=>x.done&&num(x.reps));
+   const priorTarget=priorDone.length?Math.min(max,Math.max(baseline,Math.min(...priorDone.map(x=>Number(x.reps))))):baseline;
+   const addingSet=priorDone.length>0&&baseSets>priorDone.length;let targetReps=priorTarget;
+   if(reduce||poorSleep)targetReps=Math.max(ex.timed?5:4,baseline-(ex.timed?5:2));
+   else if(twoEasy&&!addingSet&&priorDone.length)targetReps=Math.min(max,priorTarget+(ex.timed?5:1));
+   const sets=(balance||cardio)?1:baseSets,rest=Math.min(180,Math.max(ex.rest,adapted?90:0)+(reduce||poorSleep?30:0));
+   const reps=`${ex.reps.includes('每侧')?'每侧 ':''}${targetReps} ${ex.timed?'秒':'次'}`;
+   const weights=priorDone.map(x=>Number(x.weight)).filter(x=>Number.isFinite(x)&&x>0),priorWeight=weights.length?Math.min(...weights):null;
+   const withinLimit=!ex.equipment.includes('dumbbell')||priorWeight<=Number(p.maxDumbbell);
+   const weightSuggestion=ex.load?(reduce||poorSleep?'选择更容易控制的轻重量，仍应能多做约 3 次。':priorWeight&&withinLimit?`可从上次记录的 ${priorWeight} 公斤试起，先判断控制能力，不自动加重。`:'用很轻重量试做，结束时仍能再做约 3 次；器材最大重量不是起始重量。'):'使用能稳定完成的幅度与姿势，不追求极限。';
+   return{id,sets,reps,rest,targetReps,weightSuggestion,reason:reduce||poorSleep?'减少目标次数并延长休息。':addingSet?'稳定完成并恢复良好后先增加一组，次数保持。':twoEasy&&priorDone.length?'连续轻松完成后小幅增加目标次数。':adapted?'按功能和恢复采用较低起点。':'先稳定动作，再根据记录调整。'};
+  });
+  const estimate=()=>Math.ceil((360+exercises.reduce((sum,x)=>{const ex=E[x.id],side=ex.reps.includes('每侧')?2:1,effort=ex.timed?x.targetReps*side:x.targetReps*side*3;return sum+x.sets*(effort+x.rest)+15;},0))/60);
+  while(estimate()>minutes&&exercises.some(x=>x.sets>1)){const last=[...exercises].reverse().find(x=>x.sets>1);last.sets--;last.reason='按今天可用时间减少组数，保留主要动作。';}
+  while(estimate()>minutes&&exercises.length>4){let index=-1;for(let j=exercises.length-1;j>=0;j--)if(!['squat','push','pull','hinge','balance'].includes(E[exercises[j].id].pattern)){index=j;break;}if(index<0)break;exercises.splice(index,1);}
+  return{id:`workout-${i}`,label:`${adapted?'轻量全身':'全身'} ${String.fromCharCode(65+i)}`,day,sets:Math.max(...exercises.map(x=>x.sets)),minutes:estimate(),exercises};
  });
- const notes=[];
- if(p.days.length>trainingDays.length)notes.push('把力量训练隔开至少一天；相邻可用日留给散步和恢复。每周最多安排 3 次全身力量训练。');
- if(trainingDays.length<2)notes.push('当前可用日期只适合安排 1 次力量训练。先建立习惯，有条件后再增加一个不相邻的训练日。');
- if(pull==='wraise')notes.push('你还没有可用于拉力训练的器材。W 抬手只能练上背控制，不能替代负重划船的增肌刺激；先使用现有条件，不要求购买。');
- if(Number(p.minutes)===20)notes.push('20 分钟版先保留推、拉、蹲、髋部动作；所选体型重点需要更充裕的时间或后续增加训练容量。');
- if(p.focus==='shoulder'&&!p.equipment.includes('dumbbell')&&!p.equipment.includes('band'))notes.push('肩部重点暂受器材限制，先练基本控制。');
- if(Number(p.sleep)<6)notes.push('你填写的睡眠偏少。恢复不佳时少做一组或改散步，不因为日历到了就强行加量。');
- if(novice&&p.equipment.includes('dumbbell'))notes.push('有哑铃也从很轻重量试起；器材最大重量不是训练起始重量。');
- if(p.equipment.includes('dumbbell')&&!p.adjustable)notes.push('固定哑铃如果太重，就换徒手版本；不要为了使用现有重量硬撑。没有更小增量时保持原重量，不必购买。');
- return{valid:true,safety,trainingDays,workouts,notes,sets,focus:FOCUS[p.focus],goal:GOALS[p.goal]};
+ if(p.days.length>trainingDays.length)notes.push('力量训练间隔至少一天，每周最多 3 次；相邻可用日留给恢复，不补做双倍。');
+ if(trainingDays.length<2)notes.push('当前日期只适合 1 次力量训练，先建立习惯，有条件再增加不相邻的一天。');
+ if(['wraise','standingw'].includes(pull))notes.push('当前上背控制不能等效替代负重划船的增肌刺激。先使用安全的现有条件，不要求购买器材。');
+ if(minutes===20)notes.push('20 分钟优先推、拉、蹲、髋部动作；老年模式额外保留扶稳平衡练习。');
+ if(p.focus==='core')notes.push('腹部重点提高稳定性，不承诺只减少腹部脂肪；体型变化需要持续训练和适当饮食。');
+ if(p.equipment.includes('dumbbell')&&!p.adjustable)notes.push('固定哑铃太重就用可控制的徒手同类动作，没有小增量就保持原重量。');
+ if(minutes<maxMinutes)notes.push(`当前选用 ${minutes} 分钟的缩短版本，仅用于本次；后续日程仍按常规 ${maxMinutes} 分钟匹配。`);
+ const today=dateKey(now),previous=dateKey(shiftDate(now,-1)),trainedToday=history.some(h=>h.date===today&&Number(h.completedSets)>0),trainedYesterday=history.some(h=>h.date===previous&&Number(h.completedSets)>0);
+ const normalWorkouts=minutes<maxMinutes?makePlan(p,history,{now}).workouts:workouts;
+ const activityMinutes=adapted?5:({lose:20,health:15,recomp:15,build:10}[goalKey]);
+ const next7=Array.from({length:7},(_,n)=>{
+  const date=shiftDate(now,n),key=dateKey(date),day=(date.getDay()+6)%7,workout=(n?normalWorkouts:workouts).find(w=>w.day===day);
+  if(n===0&&(options.skipToday||trainedToday||trainedYesterday))return{date:key,day,kind:'rest',title:trainedToday?'今天已完成，留出恢复时间':trainedYesterday?'昨天已训练，今天恢复':'今天休息，不补课',minutes:0};
+  if(workout)return{date:key,day,kind:'strength',title:workout.label,workoutId:workout.id,minutes:workout.minutes};
+  return{date:key,day,kind:n%2?'rest':'activity',title:n%2?'恢复日，按感觉放松':'舒适散步或日常轻活动',minutes:n%2?0:activityMinutes};
+ });
+ const rationale=[`每次 ${minutes} 分钟，优先推、拉、蹲、髋部，侧重${FOCUS[p.focus]}。`,`目标为${GOALS[goalKey]}，从当前能完成的训练量起步。`,`根据已选器材和${novice?'初学':p.experience==='return'?'重新开始':'已有运动'}基础匹配动作。`,...safety.adaptations];
+ return{valid:true,safety,trainingDays,workouts,notes,sets:baseSets,focus:FOCUS[p.focus],goal:GOALS[goalKey],...frames,next7,adjustment,rationale,adapted};
 }
 function nutrition(p){
- const safety=assess(p);if(!safety.eligible)return{eligible:false,reason:'先完成适用性评估，本版不生成热量、蛋白质或减脂目标。'};
- let effectiveGoal=p.goal,reason='';
- if(safety.bmi<20&&p.goal==='lose'){effectiveGoal='recomp';reason='你当前较轻，先维持饮食并建立力量训练习惯，不自动安排热量缺口。';}
- if(safety.bmi>=30)return{eligible:true,calories:null,protein:null,reason:'BMI 不能单独判断身体组成。这个范围的能量和蛋白质建议需要更多信息，本版只提供餐盘搭配，不按体重直接套数值。',effectiveGoal};
+ const s=details(p),bmi=bmiOf(p);let effectiveGoal=p.goal,reason='';
+ const blocked=reason=>({eligible:false,calories:null,protein:null,reason,effectiveGoal,menuAllowed:false});
+ if(Number(p.age)<18)return blocked('未成年人需要符合生长发育的饮食，本工具不生成成人热量、蛋白质目标或减脂菜单。');
+ if(isRelevant(p,'pregnancy')&&s.pregnancyStatus!=='none')return blocked('孕期、产后恢复或哺乳期的饮食需要专门安排，先确认阶段并使用相应建议。');
+ if(isRelevant(p,'eating')&&!['none','expected'].includes(s.eatingStatus))return blocked('进食问题或不明原因体重变化需要先确认原因，不生成热量、蛋白质目标和具体菜单。');
+ if(bmi<16)return blocked('当前体重非常轻，需要先评估营养风险，不自动开热量、增重速度、蛋白质目标或具体菜单。');
+ if(bmi<18.5&&s.weightTrend!=='stable')return blocked('先确认体重偏轻是否长期稳定，再决定饮食安排；不按一次体重计算增减重目标。');
+ const condition=isRelevant(p,'condition')&&s.conditionType!=='none';
+ if(condition&&!['cardio','metabolic','other','medicine'].includes(s.conditionType))return blocked('肾脏疾病、多种相关疾病或未明确的疾病类型可能有特殊营养要求，请使用专业人员给出的饮食方案。');
+ if(s.nutritionRestriction==='special')return blocked('你有特殊饮食医嘱，蛋白质、热量及菜单需要遵循该建议，运动许可不能覆盖饮食要求。');
+ if(screeningQuestions(p).some(q=>q.key==='nutritionRestriction')&&s.nutritionRestriction!=='none')return blocked(s.nutritionRestriction==='special'?'你有特殊饮食医嘱，蛋白质、热量及菜单需遵循该建议，运动许可不会覆盖饮食要求。':'请在工具内确认是否有特殊饮食医嘱，此项仅影响饮食，不阻止适用训练。');
+ if(bmi<20&&p.goal==='lose'){effectiveGoal='recomp';reason='你当前较轻，先维持饮食并建立力量训练习惯，不自动安排热量缺口。';}
+ if(bmi<18.5){effectiveGoal='build';reason='长期稳定偏轻：优先规律进餐与力量练习，避免减脂。以下只是起点估算，持续记录后再调整。';}
+ if(bmi>=30||condition)return{eligible:true,calories:null,protein:null,reason:reason+(condition?'慢性情况的能量与蛋白质需求需结合治疗确认；已确认无特殊饮食要求，先提供日常均衡搭配。':'BMI 无法反映全部身体组成，此范围先提供均衡餐盘，不按当前体重放大热量或蛋白质数值。'),effectiveGoal,menuAllowed:true};
  const protein=[Math.round(Number(p.weight)*1.4),Math.round(Number(p.weight)*1.8)];
- if(p.sex==='skip')return{eligible:true,calories:null,protein,reason:'未提供公式需要的生理性别，因此不估算热量。可以先用餐盘份量法。',effectiveGoal};
+ if(p.sex==='skip')return{eligible:true,calories:null,protein,reason:reason+'未提供公式需要的生理性别，因此不估算热量。可使用餐盘份量法。',effectiveGoal,menuAllowed:true};
  const rest=10*Number(p.weight)+6.25*Number(p.height)-5*Number(p.age)+(p.sex==='male'?5:-161);
  const factor={low:1.35,medium:1.5,high:1.65}[p.activity];
  const maintenance=rest*factor;const multiplier=effectiveGoal==='lose'?.9:effectiveGoal==='build'?1.05:1;
  let target=maintenance*multiplier;
- if(target<(p.sex==='male'?1500:1200))return{eligible:true,calories:null,protein,reason:'公式得出的热量较低，个体误差可能较大；本版不展示减量数字，先使用均衡餐盘并咨询营养师。',effectiveGoal};
- return{eligible:true,calories:Math.round(target/50)*50,protein,maintenance:Math.round(maintenance/50)*50,rest:Math.round(rest),factor,reason,effectiveGoal};
+ if(target<(p.sex==='male'?1500:1200))return{eligible:true,calories:null,protein,reason:reason+'公式热量较低且有个体误差，先使用均衡餐盘，不展示减量数字。',effectiveGoal,menuAllowed:true};
+ return{eligible:true,calories:Math.round(target/50)*50,protein,maintenance:Math.round(maintenance/50)*50,rest:Math.round(rest),factor,reason,effectiveGoal,menuAllowed:true};
 }
 function progression(exId,history,maxWeight){
  const relevant=history.filter(h=>h.exercises?.some(x=>x.id===exId&&x.sets?.some(s=>s.done))).slice(-2);
  if(!relevant.length)return '首次练习：选能控制动作、做完仍能再做约 3 次的难度；不要测试最大重量。';
  if(relevant.some(h=>h.pain))return '最近记录过疼痛：先暂停引发疼痛的动作，请专业人员评估，不加重。';
+ if(relevant.some(h=>h.effort==='hard'||h.recovery==='poor'||h.recovery==='tired'||Number(h.completedSets)<Number(h.totalSets)*.8))return '最近吃力、完成不足或恢复不好：先减量或降低难度、延长休息，不加重。';
  if(relevant.length<2)return '先保持当前难度，累计两次动作稳定的训练记录，再判断是否加重。';
  const ready=relevant.every(h=>h.effort==='easy'&&h.exercises.filter(x=>x.id===exId).every(x=>x.sets.length&&x.sets.every(s=>s.done&&Number(s.reps)>=E[exId].maxReps)));
  if(!ready)return '先保持重量和难度，逐步做到次数上限；动作变形或恢复差时减量。';
@@ -105,5 +277,5 @@ function progression(exId,history,maxWeight){
  }
  return '两次都轻松达到上限：先改善控制或选择稍难的同类动作，每次只改变一个条件。';
 }
-const api={validateProfile,assess,schedule,makePlan,nutrition,progression,dateKey,GOALS,FOCUS,DAYS};root.FitEngine=api;if(typeof module!=='undefined')module.exports=api;
+const api={validateProfile,screeningQuestions,assess,schedule,makePlan,nutrition,alternatives,progression,dateKey,GOALS,FOCUS,DAYS};root.FitEngine=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

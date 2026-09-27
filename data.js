@@ -1,6 +1,9 @@
 (function(root){
 const source=(id)=>`https://github.com/yuhonas/free-exercise-db/blob/f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5/exercises/${id}.json`;
 const nhs='https://www.nhs.uk/live-well/exercise/strength-exercises/';
+const balanceSource='https://www.nhs.uk/live-well/exercise/balance-exercises/';
+const standingSource='https://www.uhsussex.nhs.uk/resources/standing-exercises/';
+const shoulderSource='https://www.newcastle-hospitals.nhs.uk/services/newcastle-occupational-health-service/information-for-staff/physiotherapy/self-help-leaflets/painful-shoulder/';
 const moves=[
 ['squat','徒手深蹲','腿部','squat',[],'Bodyweight_Squat','8–12 次',12,90,['双脚约肩宽，脚尖自然略向外，脚掌完整着地。','吸气，屈髋屈膝，向下坐到能稳定控制的位置。','膝盖跟随脚尖方向；呼气站起，不用锁死膝盖。'],['脚跟翘起或膝盖向内夹。','为了蹲得低而让腰背明显弯曲。'],'蹲浅一些；有稳定椅子时换成坐站。'],
 ['chair','椅子坐站','腿部','squat',['chair'],null,'6–10 次',10,90,['椅子靠墙、无轮、不打滑；双脚着地。','坐在前半部，身体略前倾，呼气站起。','慢慢坐回，必要时用手轻扶。'],['跌坐到椅子上。','使用会滑动、转动的椅子。'],'减少次数，扶着稳定支撑完成。'],
@@ -22,16 +25,31 @@ const moves=[
 ['calf','扶稳提踵','小腿','calf',[],null,'10–15 次',15,60,['轻扶墙面或固定支撑，双脚着地。','缓慢抬起脚跟，重心均匀放在前脚掌。','控制落下，不用弹跳。'],['脚踝向外翻。','失去平衡还继续。'],'抬低一些，双手扶稳。'],
 ['legpress','器械腿举','腿部','squat',['legpress'],'Leg_Press','8–12 次',12,120,['先请场馆工作人员示范保险杆和座椅调节。','背部贴靠垫，双脚完整踩踏板，膝盖对准脚尖。','用轻重量缓慢屈伸，腰臀不离垫，膝盖不锁死。'],['下放太深，腰臀离垫。','不熟悉保险装置就开始。'],'换徒手深蹲；未学会保险装置时不做此动作。'],
 ['chestmachine','器械胸推','胸部 · 手臂','push',['chestmachine'],'Machine_Bench_Press','8–12 次',12,120,['请工作人员协助把手高度调到胸中部。','背贴靠垫，双脚踩稳，手腕自然平直。','呼气平稳推起，缓慢回程，重物不相撞。'],['耸肩、肘抬过高。','选重过大，靠身体扭动推起。'],'减轻重量或换靠墙俯卧撑。'],
-['lat','高位下拉','背部 · 手臂','pull',['lat'],'Wide-Grip_Lat_Pulldown','8–12 次',12,120,['调好压腿垫与座位，用舒适的略宽握距。','肩膀放松下沉，手肘向下，拉杆靠近上胸前方。','控制向上还原，不把拉杆拉到颈后。'],['大幅后仰借力。','颈后下拉或耸肩。'],'减重并缩小幅度，先由工作人员示范。']
+['lat','高位下拉','背部 · 手臂','pull',['lat'],'Wide-Grip_Lat_Pulldown','8–12 次',12,120,['调好压腿垫与座位，用舒适的略宽握距。','肩膀放松下沉，手肘向下，拉杆靠近上胸前方。','控制向上还原，不把拉杆拉到颈后。'],['大幅后仰借力。','颈后下拉或耸肩。'],'减重并缩小幅度，先由工作人员示范。'],
+['supportedbalance','扶墙单腿平衡','平衡 · 下肢控制','balance',[],null,'每侧 5–10 秒',10,60,['面向墙站稳，双手扶墙；地面平整防滑，脚边不放杂物。','重心缓慢移到一条腿，另一只脚轻轻离地；支撑膝微屈，两侧髋部保持平齐。','每侧先保持 5 秒，正常呼吸；轻放回脚后再换边，不稳时立即双脚着地。'],['放开支撑、闭眼或在软垫上练习。','抬腿过高、歪着身体硬撑秒数。'],'双手扶稳，把抬起脚的脚尖留在地面；先做短暂重心转移，不强求离地。'],
+['supportedmarch','扶稳原地慢踏步','基础活动 · 下肢协调','cardio',[],null,'每侧 5–8 次',8,60,['面向墙面或固定台面，双手扶稳，双脚与髋同宽。','把一侧膝盖轻抬到舒服的高度，再缓慢把脚放回地面。','左右交替，每侧先做 5 次；能轻松完整说话即可，不追求速度或抬高。'],['越踏越快、身体后仰，或屏住呼吸。','扶着会滑动的椅子，或脚还没放稳就抬另一边。'],'少抬一点、放慢速度，每侧少做几次；若扶稳仍无法站立，先暂停这个动作。'],
+['standinghip','扶稳站姿髋伸','臀部 · 大腿后侧控制','hinge',[],null,'每侧 5–8 次',8,60,['双手扶住墙面或固定台面，站直，双脚与髋同宽。','保持躯干朝前，一条腿缓慢向后移一小段，膝盖自然伸直但不锁死。','缓慢放回后换腿；先做每侧 5 次，臀部轻发力，腰背保持自然，不需要抬得高。'],['身体向前倒，或用挺腰、转髋代替腿后移。','踢腿借力、抬得过高，或扶着不稳定的家具。'],'腿往后移动更小的距离，脚尖轻点地；这是基础髋伸练习，不能代替负重硬拉的全部训练刺激。'],
+['standingw','站姿肩胛轻收','上背部控制','pull',[],null,'6–10 次',10,60,['双脚稳稳着地，身体自然站直，双臂放松垂在身侧，肩膀远离耳朵。','轻轻把两侧肩胛骨向后靠近，幅度小、无痛即可，手臂不用抬高。','缓慢放松回原位，正常呼吸；先做 6 次，避免刻意挺胸或憋气。'],['用力夹背、耸肩或腰部后仰。','为了完成次数而继续引起肩部疼痛的动作。'],'减小幅度、减少次数；有稳定椅子时可坐着做。这是肩胛控制练习，不能提供负重划船同等的增肌刺激。']
 ];
-const EXERCISES=Object.fromEntries(moves.map(x=>[x[0],{id:x[0],name:x[1],muscle:x[2],pattern:x[3],equipment:x[4],imageId:x[5],reps:x[6],maxReps:x[7],rest:x[8],steps:x[9],mistakes:x[10],easier:x[11],source:x[5]?source(x[5]):(['wall','chair','calf'].includes(x[0])?nhs:null),load:['dumbbell','legpress','lat','chestmachine'].some(y=>x[4].includes(y)),timed:x[0]==='plank'}]));
+const extraSources={supportedbalance:balanceSource,supportedmarch:standingSource,standinghip:standingSource,standingw:shoulderSource};
+const floorMoves=new Set(['pushup','floor','bandrow','wraise','bridge','deadbug','plank']);
+const supportedMoves=new Set(['chair','wall','calf','legpress','chestmachine','lat','supportedbalance','supportedmarch','standinghip']);
+const EXERCISES=Object.fromEntries(moves.map(x=>[x[0],{id:x[0],name:x[1],muscle:x[2],pattern:x[3],equipment:x[4],imageId:x[5],reps:x[6],maxReps:x[7],rest:x[8],steps:x[9],mistakes:x[10],easier:x[11],source:x[5]?source(x[5]):(extraSources[x[0]]||(['wall','chair','calf'].includes(x[0])?nhs:null)),load:['dumbbell','legpress','lat','chestmachine'].some(y=>x[4].includes(y)),timed:['plank','supportedbalance'].includes(x[0]),floor:floorMoves.has(x[0]),supported:supportedMoves.has(x[0])}]));
 const SOURCES=[
 {title:'美国运动医学会：2026 年力量训练立场声明',url:'https://acsm.org/resistance-training-guidelines-update-2026/',date:'2026',use:'支持主要肌群规律训练、逐步进阶以及徒手和弹力带等训练方式。这里的具体排课规则是保守的产品设计，不是机构对个人开出的处方。'},
 {title:'世界卫生组织：身体活动',url:'https://www.who.int/news-room/fact-sheets/detail/physical-activity',date:'2024 / 2020 指南',use:'成人每周逐步达到 150–300 分钟中等强度活动及至少 2 天肌力活动。初学者从较少活动起步。'},
+{title:'美国运动医学会：运动前筛查与分流',url:'https://acsm.org/wp-content/uploads/EIM-Health-Care-Providers-Action-Guide-clickable-links.pdf',date:'第 5 页 · 核验 2026-09-27',use:'结合警示症状、已确诊疾病和当前活动习惯，判断是否需要先接受专业评估。本工具的问卷、适配和排课是本地规则，没有经过临床验证，也不代表医生已确认你适合训练。'},
+{title:'英国国家医疗服务体系：健康增重',url:'https://www.nhs.uk/live-well/healthy-weight/managing-your-weight/healthy-ways-to-gain-weight/',date:'页面复核 2023 · 核验 2026-09-27',use:'体重偏低不自动等于不能力量训练；规律饮食与合适的力量活动可帮助健康增重。突然或无法解释的体重下降，需要先向医生咨询。'},
+{title:'英国 NICE：严重消瘦与营养评估',url:'https://www.nice.org.uk/guidance/cg32/chapter/Recommendations',date:'CG32 第 1.4.6–1.4.7 节 · 核验 2026-09-27',use:'体重指数低于 16 是开始营养支持前的一项再喂养风险筛查条件，需要专业营养评估。本工具不凭体重指数诊断疾病，也不为严重消瘦者自动开出激进增重或高蛋白处方。'},
+{title:'美国疾病控制与预防中心：65 岁及以上人群活动建议',url:'https://www.cdc.gov/physical-activity-basics/guidelines/older-adults.html',date:'2025-12-04 · 核验 2026-09-27',use:'结合有氧、肌力和平衡活动，按个人能力与健康条件起步；年龄本身不是禁止运动的理由。本工具的低起点次数是产品安排，不是该机构为个人开出的计划。'},
+{title:'美国运动医学会：体重较高人群如何开始活动',url:'https://acsm.org/wp-content/uploads/EIM_Obesity_Flyer_English.pdf',date:'核验 2026-09-27',use:'从能承受的少量活动开始，结合有氧与力量训练；即使体重没有下降，活动仍有健康益处。体重指数用于提示调整起点，不单独作为禁止训练的条件。'},
 {title:'国际运动营养学会：蛋白质与运动',url:'https://pmc.ncbi.nlm.nih.gov/articles/PMC5477153/',date:'2017',use:'健康运动人群每日蛋白质常用范围为每公斤体重 1.4–2.0 克。本工具在适用人群中给出 1.4–1.8 克的保守起点。'},
 {title:'Mifflin 等：健康成人静息能量估算研究',url:'https://pubmed.ncbi.nlm.nih.gov/2305711/',date:'1990',use:'静息能量估算公式。活动系数、±5–10% 调整是本工具估算假设，误差需要靠持续记录校正。'},
 {title:'加拿大卫生部：怎样搭配健康餐盘',url:'https://www.canada.ca/en/health-canada/services/food-guide/eating-support/cooking/make-healthy-meals-plate.html',date:'核验 2026-09-27',use:'用蔬果、全谷主食、蛋白质食物组成餐盘。下面的中餐例子为原创应用示例，非原文食谱。'},
 {title:'英国国家医疗服务体系：初学者力量动作',url:nhs,date:'核验 2026-09-27',use:'椅子坐站、靠墙俯卧撑、扶稳提踵的图文参考。'},
+{title:'英国国家医疗服务体系：扶墙平衡练习',url:balanceSource,date:'页面复核 2023 · 核验 2026-09-27',use:'扶墙单腿平衡的动作与每侧 5–10 秒起点参考。请在平整地面保留稳定支撑，不以闭眼或撤掉支撑增加难度。'},
+{title:'英国 Sussex NHS 医院：站姿基础动作',url:standingSource,date:'核验 2026-09-27',use:'扶稳慢踏步、站姿髋伸的官方图文。中文说明为改写；原页未指定个人次数，本工具每侧 5–8 次为较低起点的本地安排。'},
+{title:'英国 Newcastle NHS 医院：肩胛后收动作',url:shoulderSource,date:'页面更新 2025 · 核验 2026-09-27',use:'仅参考其中肩胛轻收的坐姿或站姿动作。此动作用于控制练习；引用该页不表示本工具可诊断或治疗肩痛，也不等同于负重拉力训练。'},
 {title:'美国 NIDDK：体重计划工具适用边界',url:'https://www.niddk.nih.gov/health-information/weight-management/body-weight-planner',date:'2017',use:'成人体重规划不适用于未成年人、孕期或哺乳期。本工具对健康风险另有保守限制。'},
 {title:'开源动作图示库 free-exercise-db',url:'https://github.com/yuhonas/free-exercise-db',date:'固定版本 f00c92c · 2026-09-27',use:'复用少量动作的起止照片，原库声明 Unlicense 公共领域许可；它是图示资料，不是医学证据，也未获机构逐项认证。中文步骤为本工具改写。'}
 ];
