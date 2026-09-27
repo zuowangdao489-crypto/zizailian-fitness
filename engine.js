@@ -25,14 +25,16 @@ function validateProfile(p){
  return errors;
 }
 function assess(p){
- const reasons=[];const bmi=Number(p.weight)/(Number(p.height)/100)**2;
- if(Number(p.age)<18)reasons.push('你未满 18 岁：本版不自动安排成人增肌减脂计划，请与监护人及专业人员一起安排。');
- if(Number(p.age)>=65)reasons.push('65 岁及以上需要增加平衡、功能和个体评估；本版成人入门算法暂不覆盖。');
+ const reasons=[],issues=[];const bmi=Number(p.weight)/(Number(p.height)/100)**2;
+ const add=(code,title,answer,message,step)=>{reasons.push(message);issues.push({code,title,answer,message,step});};
+ if(Number(p.age)<18)add('age','年龄适用范围',`你填写的是 ${p.age} 岁。`,'本版不自动安排未成年人的成人增肌减脂计划，请与监护人及专业人员一起安排。',0);
+ if(Number(p.age)>=65)add('age','年龄适用范围',`你填写的是 ${p.age} 岁。`,'本版成人入门计划暂不覆盖 65 岁及以上的个体需求；合适的计划还需考虑平衡与日常功能。',0);
  const labels={symptoms:'胸痛、晕厥或异常气短',condition:'慢性病、用药或医生的运动限制',pain:'持续疼痛、受伤或手术恢复',pregnancy:'孕期、产后恢复或哺乳期',eating:'进食障碍史或近期不明原因的体重变化'};
- for(const key of Object.keys(labels))if(p.health[key]!=='no')reasons.push(`${labels[key]}：先请了解你情况的医生或相关专业人员评估，再决定训练和饮食。`);
- if(bmi<18.5)reasons.push('按所填数据计算的体重偏低：先确认营养与健康情况，本版不自动给出增减重处方。');
- if(bmi>=35)reasons.push('按所填数据计算，需进一步评估关节负担和代谢情况；本版暂不自动安排负重与热量目标。');
- return{eligible:reasons.length===0,reasons,bmi:Math.round(bmi*10)/10,urgent:p.health.symptoms==='yes'};
+ for(const key of Object.keys(labels))if(p.health[key]!=='no')add(key,labels[key],`你选择了“${p.health[key]==='unsure'?'不确定':'有'}”。`,p.health[key]==='unsure'?`${labels[key]}：回答“不确定”不代表已确认有这个问题。先核对题意；仍无法判断时，请向了解你情况的医生或相关专业人员确认。`:`${labels[key]}：请让了解你情况的医生或相关专业人员协助决定适合的训练和饮食。`,3);
+ const bodyAnswer=`你填写的是 ${p.height} 厘米、${p.weight} 公斤，计算的 BMI（体重指数）为 ${bmi.toFixed(1)}。`;
+ if(bmi<18.5)add('body','身高与体重范围',bodyAnswer,'体重指数低于本版自动计划覆盖范围（18.5）。先核对身高和体重单位；数据准确时，需结合营养与健康情况另行安排。',0);
+ if(bmi>=35)add('body','身高与体重范围',bodyAnswer,'体重指数达到本版自动计划的上限（35）。先核对身高和体重单位；数据准确时，需结合关节负担、体能与健康情况另行安排。',0);
+ return{eligible:reasons.length===0,reasons,issues,bmi:Math.round(bmi*10)/10,urgent:p.health.symptoms==='yes'};
 }
 function schedule(days){
  const all=[...new Set(days)].sort((a,b)=>a-b);let best=[];
