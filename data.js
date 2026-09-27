@@ -51,6 +51,10 @@ const SOURCES=[
 {title:'英国 Sussex NHS 医院：站姿基础动作',url:standingSource,date:'核验 2026-09-27',use:'扶稳慢踏步、站姿髋伸的官方图文。中文说明为改写；原页未指定个人次数，本工具每侧 5–8 次为较低起点的本地安排。'},
 {title:'英国 Newcastle NHS 医院：肩胛后收动作',url:shoulderSource,date:'页面更新 2025 · 核验 2026-09-27',use:'仅参考其中肩胛轻收的坐姿或站姿动作。此动作用于控制练习；引用该页不表示本工具可诊断或治疗肩痛，也不等同于负重拉力训练。'},
 {title:'美国 NIDDK：体重计划工具适用边界',url:'https://www.niddk.nih.gov/health-information/weight-management/body-weight-planner',date:'2017',use:'成人体重规划不适用于未成年人、孕期或哺乳期。本工具对健康风险另有保守限制。'},
+{title:'美国 CDC：BMI 能说明什么',url:'https://www.cdc.gov/bmi/about/index.html',date:'2025-12-16 · 核验 2026-09-27',use:'BMI 不直接测量体脂，不能区分脂肪、肌肉与骨量。薄肌目标不会凭 BMI 推断精确体脂率或诊断身体组成。'},
+{title:'Helms 等：不同能量盈余与力量训练变化',url:'https://pubmed.ncbi.nlm.nih.gov/37914977/',date:'2023 · 核验 2026-09-27',use:'8 周、17 名完成者的小样本训练研究中，体重增长更快主要与皮褶增加相关。不能据此断定每个人增重都是脂肪，也不能精确规定个人的最佳增重速度。本工具不承诺增重全部为肌肉。'},
+{title:'Slater 等：增肌是否需要能量盈余',url:'https://www.frontiersin.org/journals/nutrition/articles/10.3389/fnut.2019.00131/full',date:'2019 · 核验 2026-09-27',use:'增肌所需的能量安排与训练基础、个体反应有关。工具把外形目标和体重方向分开，使用起点估算与记录复盘；具体趋势阈值是保守产品规则，不是该综述对个人的处方。'},
+{title:'英国 East Lancashire NHS 医院：腰围测量',url:'https://elht.nhs.uk/services/dietetics/body-measuring-techniques',date:'核验 2026-09-27',use:'在最下方肋骨与髋骨上缘中点，自然呼气后测量腰围，保持测量条件一致。腰围变化仅作趋势参考，不直接换算体脂或肌肉变化。'},
 {title:'开源动作图示库 free-exercise-db',url:'https://github.com/yuhonas/free-exercise-db',date:'固定版本 f00c92c · 2026-09-27',use:'复用少量动作的起止照片，原库声明 Unlicense 公共领域许可；它是图示资料，不是医学证据，也未获机构逐项认证。中文步骤为本工具改写。'}
 ];
 const EQUIPMENT=[['dumbbell','哑铃','固定重量或可调哑铃'],['band','长弹力带','能绕过双脚的长带；短环不适用'],['chair','稳定椅子','无轮、靠墙、不打滑'],['legpress','腿举器械','健身房固定器械'],['chestmachine','胸推器械','健身房坐姿推胸'],['lat','高位下拉','健身房背部训练器械']];
