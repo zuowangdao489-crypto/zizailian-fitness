@@ -1,0 +1,26 @@
+{
+  "source": {
+    "repo": "https://github.com/yuhonas/free-exercise-db",
+    "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+    "license": "Unlicense",
+    "verified": "2026-09-27"
+  },
+  "assets": [
+    "Bodyweight_Squat",
+    "Goblet_Squat",
+    "Pushups",
+    "Dumbbell_Floor_Press",
+    "Bent_Over_Two-Dumbbell_Row",
+    "Stiff-Legged_Dumbbell_Deadlift",
+    "Butt_Lift_Bridge",
+    "Dead_Bug",
+    "Plank",
+    "Side_Lateral_Raise",
+    "Band_Pull_Apart",
+    "Dumbbell_Bicep_Curl",
+    "Leg_Press",
+    "Machine_Bench_Press",
+    "Wide-Grip_Lat_Pulldown"
+  ],
+  "purpose": "动作起止图示；不代表医学认证"
+}

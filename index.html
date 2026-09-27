@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#102b2c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="自在练">
+  <meta name="description" content="按你的器材、时间与目标安排训练。中文入门指导、饮食与本机训练记录。">
+  <meta name="referrer" content="no-referrer">
+  <title>自在练 · 我的健身计划</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23102b2c'/%3E%3Cpath d='M18 21v22M25 17v30M39 17v30M46 21v22M25 32h14' stroke='%23c5f36b' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="data.js"></script>
+  <script defer src="engine.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">跳到内容</a>
+  <header class="app-header"><a href="#today" class="brand" aria-label="自在练首页"><span class="brand-icon">杠</span><span>自在练<small>我的健身计划</small></span></a><button class="icon-button" id="help-button" aria-label="使用帮助">?</button></header>
+  <main id="main" tabindex="-1"></main>
+  <nav id="navigation" class="bottom-nav" aria-label="主要功能"></nav>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="timer" class="timer" hidden></div>
+  <dialog id="modal"><div id="modal-content"></div></dialog>
+  <noscript><p>请在浏览器中允许 JavaScript，以使用资料填写和训练记录功能。</p></noscript>
+</body>
+</html>
