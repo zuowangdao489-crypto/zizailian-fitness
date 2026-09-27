@@ -36,6 +36,8 @@ const floorMoves=new Set(['pushup','floor','bandrow','wraise','bridge','deadbug'
 const supportedMoves=new Set(['chair','wall','calf','legpress','chestmachine','lat','supportedbalance','supportedmarch','standinghip']);
 const EXERCISES=Object.fromEntries(moves.map(x=>[x[0],{id:x[0],name:x[1],muscle:x[2],pattern:x[3],equipment:x[4],imageId:x[5],reps:x[6],maxReps:x[7],rest:x[8],steps:x[9],mistakes:x[10],easier:x[11],source:x[5]?source(x[5]):(extraSources[x[0]]||(['wall','chair','calf'].includes(x[0])?nhs:null)),load:['dumbbell','legpress','lat','chestmachine'].some(y=>x[4].includes(y)),timed:['plank','supportedbalance'].includes(x[0]),floor:floorMoves.has(x[0]),supported:supportedMoves.has(x[0])}]));
 const SOURCES=[
+{title:'Mayo Clinic：运动前后怎样吃',url:'https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/exercise/art-20045506',date:'2023-12-21 · 核验 2026-09-27',use:'运动前兼顾碳水食物、份量和消化舒适；运动后可用含主食与蛋白质的正餐恢复，距离下餐较久时考虑小份加餐。本工具不设置必须额外吃一餐的固定窗口。'},
+{title:'食物过敏研究与教育机构 FARE：避免交叉接触',url:'https://www.foodallergy.org/resources/avoiding-cross-contact',date:'核验 2026-09-27',use:'调味料和共享器具等可能带入过敏原；去掉表面的食物或加热并不能可靠去除。内置食材筛选不能保证餐馆成品安全，需核对包装、配料及制作情况。'},
 {title:'美国运动医学会：2026 年力量训练立场声明',url:'https://acsm.org/resistance-training-guidelines-update-2026/',date:'2026',use:'支持主要肌群规律训练、逐步进阶以及徒手和弹力带等训练方式。这里的具体排课规则是保守的产品设计，不是机构对个人开出的处方。'},
 {title:'世界卫生组织：身体活动',url:'https://www.who.int/news-room/fact-sheets/detail/physical-activity',date:'2024 / 2020 指南',use:'成人每周逐步达到 150–300 分钟中等强度活动及至少 2 天肌力活动。初学者从较少活动起步。'},
 {title:'美国运动医学会：运动前筛查与分流',url:'https://acsm.org/wp-content/uploads/EIM-Health-Care-Providers-Action-Guide-clickable-links.pdf',date:'第 5 页 · 核验 2026-09-27',use:'结合警示症状、已确诊疾病和当前活动习惯，判断是否需要先接受专业评估。本工具的问卷、适配和排课是本地规则，没有经过临床验证，也不代表医生已确认你适合训练。'},

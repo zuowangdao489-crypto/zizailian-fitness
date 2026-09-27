@@ -14,3 +14,27 @@
 
 /* Thin-muscle goal and weight direction */
 .lean-fields{padding:20px;background:#f1f7eb;border:1px solid #c8d9b7;border-radius:16px;margin:20px 0}.lean-fields>p{margin:8px 0 15px}.weight-guidance{border-color:#bbd39d;margin-top:20px}.weight-guidance .section-title{margin:0 0 12px;align-items:start;gap:12px;flex-wrap:wrap}.weight-guidance .section-title h2{margin:5px 0 0}.weight-guidance .pill{white-space:normal;max-width:100%}.weight-title{font-weight:600}.weight-review{padding:14px 16px;border-radius:12px;background:#f1f6ec;margin:14px 0}.weight-review p{margin-top:6px}.weight-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0 8px}.weight-metrics>div{padding:12px;background:#f4f7f5;border-radius:10px;min-width:0}.weight-metrics small,.weight-metrics strong{display:block}.weight-metrics small{color:var(--muted);margin-bottom:5px}.weight-metrics strong{font-size:18px;overflow-wrap:anywhere}.weight-guidance .actions{gap:10px 18px;flex-wrap:wrap}.weight-guidance.compact .weight-review{margin-bottom:10px}.lean-entry .btn{margin-top:14px}#measurement-form{margin-top:12px}@media(max-width:700px){.weight-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.lean-fields{padding:15px}.weight-guidance .actions .text-button{text-align:left}.weight-metrics strong{font-size:17px}}
+/* Scenario meal recommendations: separate location, occasion, and training context. */
+.scene-picker{padding:28px;background:linear-gradient(155deg,#fafff4 0,#fff 42%);border-color:#cbdcbc}
+.scene-picker-heading,.scene-preferences,.scene-result-head,.scene-card-top,.scene-result-foot{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.scene-picker-heading h2{margin:5px 0 18px}.scene-picker-heading{align-items:flex-start}
+.scene-controls{display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:16px}
+.scene-controls .field{min-width:0;margin:8px 0}.scene-controls select{width:100%;min-height:48px;background:#fff}
+.scene-preferences{margin:0 0 16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.scene-preferences .text-button{flex-shrink:0}.scene-result-head{margin-top:24px}.scene-result-head h3{margin:4px 0 0;font-size:23px}
+.scene-context{font-size:14px;color:var(--muted);margin:10px 0 18px}
+.scene-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.scene-meal-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px;min-width:0;overflow-wrap:anywhere}
+.scene-card-top{margin-bottom:15px}.scene-number{font-size:24px;font-weight:800;letter-spacing:-.05em;color:var(--green)}
+.scene-meal-card h3{font-size:19px;line-height:1.45;margin-bottom:14px}.scene-meal-card .pill{font-size:12px}
+.scene-ingredients{list-style:none;margin:0;padding:0}.scene-ingredients li{border-bottom:1px solid #edf1ee;padding:8px 0;margin:0}
+.scene-ingredients strong{display:block;font-size:15px}.scene-ingredients span{display:block;color:var(--muted);font-size:13px;line-height:1.55;margin-top:3px}
+.scene-why{font-size:13px;color:var(--green);margin:14px 0}.scene-how{font-size:14px;background:#f4f7f2;border-radius:10px;padding:12px}
+.scene-how p{margin-top:5px;font-size:13px}.scene-swaps{margin-top:14px;font-size:13px}.scene-swaps ul{padding-left:17px}
+.scene-swaps summary,.scene-notes summary{cursor:pointer;font-weight:650;min-height:36px;padding:5px 0}
+.scene-result-foot{margin-top:20px;justify-content:flex-start}.scene-result-foot .btn{flex-shrink:0}
+.scene-notes{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:18px}
+.scene-phone-break{display:none}
+@media(max-width:1100px) and (min-width:760px){.scene-cards{grid-template-columns:1fr}.scene-ingredients{display:grid;grid-template-columns:1fr 1fr;column-gap:18px}.scene-controls{grid-template-columns:1fr 1fr}.scene-controls .field:last-child{grid-column:1/-1}}
+@media(max-width:759px){.scene-picker{padding:18px}.scene-controls{grid-template-columns:1fr 1fr;gap:10px}.scene-controls .field:last-child{grid-column:1/-1}.scene-cards{grid-template-columns:1fr}.scene-preferences{align-items:flex-start;flex-direction:column;gap:4px}.scene-result-foot{align-items:stretch;flex-direction:column;gap:8px}.scene-meal-card{padding:18px}.scene-ingredients li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:12px}.scene-ingredients span{margin-top:0}.scene-picker-heading{gap:8px}.scene-picker-heading .badge{white-space:nowrap}.scene-phone-break{display:block}}
+@media(max-width:359px){.scene-controls{grid-template-columns:1fr}.scene-controls .field:last-child{grid-column:auto}.scene-picker-heading .badge{display:none}.scene-ingredients li{grid-template-columns:1fr;gap:2px}}
